@@ -32,5 +32,6 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
 
 test('Should not create an order with invalid cpf', function () {
   const cpf = '714.318.330-01';
+
   expect(() => new Order(cpf)).toThrow(new Error('Invalid CPF'));
 });

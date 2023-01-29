@@ -7,9 +7,7 @@ function calculateVerifyingDigit(cpf: string, factor: number) {
   for (let digit_position = 0; digit_position <= factor - 2; digit_position++) {
     digits_sum += (factor - digit_position) * parseInt(cpf[digit_position]);
   }
-
   const rest = digits_sum % CPF_LENGTH;
-
   return rest < 2 ? 0 : CPF_LENGTH - rest;
 }
 
