@@ -1,16 +1,15 @@
-import { validate } from './ValidateCPF';
 import Product from './Product';
+import AppError from './Error';
 
 export default class Order {
   public products: Product[];
-  public cpf: string;
   public discount_in_percentage: number;
+  public cpf: string;
 
   constructor(cpf: string) {
-    if (!validate(cpf)) throw new Error('Invalid CPF');
+    this.cpf = cpf;
     this.products = [];
     this.discount_in_percentage = 0;
-    this.cpf = cpf;
   }
 
   addProduct(product: Product) {
@@ -23,7 +22,7 @@ export default class Order {
       this.discount_in_percentage = discount_in_percentage;
       return;
     }
-    throw new Error('Discount Could not be Inserted');
+    throw new AppError('Discount Could not be Inserted');
   }
 
   calculateOrderPrice() {

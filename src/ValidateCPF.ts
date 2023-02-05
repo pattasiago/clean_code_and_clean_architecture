@@ -1,5 +1,5 @@
-const DIGIT_1_MAX_MULTIPLIER = 10;
-const DIGIT_2_MAX_MULTIPLIER = 11;
+const DIGIT_1_MAX_FACTOR = 10;
+const DIGIT_2_MAX_FACTOR = 11;
 const CPF_LENGTH = 11;
 
 function calculateVerifyingDigit(cpf: string, factor: number) {
@@ -27,7 +27,7 @@ function checkAllTheSameDigit(cpf: string) {
   return cpf.split('').every(current_digit => current_digit === cpf[0]);
 }
 
-function getVerifyingDigits(cpf: string) {
+function getCheckDigits(cpf: string) {
   return cpf.slice(-2);
 }
 
@@ -35,7 +35,7 @@ export function validate(cpf: string) {
   cpf = removeNonDigits(cpf);
   if (!checkValidStringLength(cpf)) return false;
   if (checkAllTheSameDigit(cpf)) return false;
-  const digit1 = calculateVerifyingDigit(cpf, DIGIT_1_MAX_MULTIPLIER);
-  const digit2 = calculateVerifyingDigit(cpf, DIGIT_2_MAX_MULTIPLIER);
-  return `${digit1}${digit2}` == getVerifyingDigits(cpf);
+  const digit1 = calculateVerifyingDigit(cpf, DIGIT_1_MAX_FACTOR);
+  const digit2 = calculateVerifyingDigit(cpf, DIGIT_2_MAX_FACTOR);
+  return `${digit1}${digit2}` == getCheckDigits(cpf);
 }
