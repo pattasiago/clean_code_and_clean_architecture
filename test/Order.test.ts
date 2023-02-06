@@ -4,9 +4,9 @@ test('Should create an order with 3 products and calculates the final order pric
   const input = {
     cpf: '714.318.330-02',
     products: [
-      { description: 'lençol', qty: 2, price: 10 },
-      { description: 'toalha', qty: 1, price: 25 },
-      { description: 'fronha', qty: 10, price: 12 },
+      { id: 1, qty: 2 },
+      { id: 2, qty: 1 },
+      { id: 3, qty: 10 },
     ],
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
@@ -18,11 +18,11 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
   const input = {
     cpf: '714.318.330-02',
     products: [
-      { description: 'lençol', qty: 2, price: 10 },
-      { description: 'toalha', qty: 1, price: 25 },
-      { description: 'fronha', qty: 10, price: 12 },
+      { id: 1, qty: 2 },
+      { id: 2, qty: 1 },
+      { id: 3, qty: 10 },
     ],
-    discount: 10,
+    discount: 'VALE10',
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
@@ -30,21 +30,21 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
 });
 
 const cases = [
-  ['less', 0, -1],
-  ['greater', 100, 101],
+  ['less', 0, 'INVALID-1'],
+  ['greater', 100, 'INVALID101'],
 ];
 
 test.each(cases)(
-  'Should throw an error if discount is %s than %d, e.g. discount = %d',
+  'Should throw an error if discount is %s than %d, e.g. discount_code = %s',
   async (condition, condition_limit, test) => {
     const input = {
       cpf: '714.318.330-02',
       products: [
-        { description: 'lençol', qty: 2, price: 10 },
-        { description: 'toalha', qty: 1, price: 25 },
-        { description: 'fronha', qty: 10, price: 12 },
+        { id: 1, qty: 2 },
+        { id: 2, qty: 1 },
+        { id: 3, qty: 10 },
       ],
-      discount: test as number,
+      discount: test as string,
     };
     const response = await axios.post('http://localhost:3000/checkout', input);
     const output = response.data;
