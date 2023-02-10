@@ -5,8 +5,19 @@ import AppError from './Error';
 import Product from './Product';
 import OrderFactory from './OrderFactory';
 import { Database } from 'sqlite3';
+import CouponDateValidationHandler from './CouponDateValidationHandler';
+import CouponValueValidationHandler from './CouponValueValidationHandler';
+import CouponZeroValueValidationHandler from './CouponZeroValueValidationHandler';
 const app = express();
 app.use(express.json());
+
+const couponDateValidation = new CouponDateValidationHandler();
+const couponValueValidation = new CouponValueValidationHandler(
+  couponDateValidation,
+);
+const couponZeroValueValidation = new CouponZeroValueValidationHandler(
+  couponValueValidation,
+);
 
 // Open a SQLite database, stored in the file db.sqlite
 const db = new Database('projectdb.sqlite');
@@ -25,27 +36,33 @@ app.post('/checkout', async function (request: Request, response: Response) {
   const cpf: string = request.body.cpf;
   const products = request.body.products ? request.body.products : [];
   const discount = request.body.discount ? request.body.discount : '';
-  const order = OrderFactory.create(cpf);
+  const order = OrderFactory.create(cpf, couponZeroValueValidation);
   for (const product of products) {
     const res_product = await db.query(
-      `SELECT description, price FROM product WHERE id=${product.id}`,
+      `SELECT * FROM product WHERE id=${product.id}`,
       [],
     );
     order.addProduct(
       new Product(
+        res_product.rows[0].id,
         res_product.rows[0].description,
         product.qty,
         res_product.rows[0].price,
+        res_product.rows[0].weight,
+        res_product.rows[0].height,
+        res_product.rows[0].width,
+        res_product.rows[0].depth,
       ),
     );
   }
 
   const coupon = await db.query(
-    `SELECT percentage FROM coupon WHERE code='${discount}'`,
+    `SELECT percentage, expiry FROM coupon WHERE code='${discount}'`,
     [],
   );
-  order.insertDiscount(
+  order.applyDiscount(
     coupon.rows[0]?.percentage ? coupon.rows[0].percentage : 0,
+    new Date(coupon.rows[0]?.expiry ? coupon.rows[0].expiry : '1994-01-01'),
   );
   response.send({ status: 'OK', message: order.calculateOrderPrice() });
 });
