@@ -45,8 +45,7 @@ export default class Order {
   calculateOrderPrice() {
     let finalPrice = 0;
     for (const product of this.products) {
-      finalPrice +=
-        product.price * product.quantity + this.calculateShipment(product);
+      finalPrice += product.price * product.quantity;
     }
     return finalPrice - (finalPrice * this.discount_in_percentage) / 100;
   }
