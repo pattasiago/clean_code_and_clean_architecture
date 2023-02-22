@@ -8,7 +8,7 @@ export default class CouponZeroValueValidationHandler
   constructor(readonly next?: CouponValidationHandler) {}
   validate(coupon: Coupon): boolean {
     if (coupon.discount_in_percentage === 0) return true;
-    if (!this.next) throw new AppError('Internal Error');
+    if (!this.next) return false;
     return this.next.validate(coupon);
   }
 }

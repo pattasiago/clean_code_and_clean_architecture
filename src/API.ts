@@ -34,9 +34,12 @@ db.query = function (sql, params) {
 
 app.post('/checkout', async function (request: Request, response: Response) {
   const cpf: string = request.body.cpf;
-  const products = request.body.products ? request.body.products : [];
+  const products = request.body.products ? request.body.products : undefined;
   const discount = request.body.discount ? request.body.discount : '';
   const order = OrderFactory.create(cpf, couponZeroValueValidation);
+  if (!products) {
+    throw new AppError('There is no product inserted');
+  }
   for (const product of products) {
     const res_product = await db.query(
       `SELECT * FROM product WHERE id=${product.id}`,
@@ -64,20 +67,26 @@ app.post('/checkout', async function (request: Request, response: Response) {
     coupon.rows[0]?.percentage ? coupon.rows[0].percentage : 0,
     new Date(coupon.rows[0]?.expiry ? coupon.rows[0].expiry : '1994-01-01'),
   );
-  response.send({ status: 'OK', message: order.calculateOrderPrice() });
+  response.send({
+    status: 'OK',
+    message:
+      request.body.from && request.body.to
+        ? order.calculateOrderPrice() + order.calculateShipmentOrder()
+        : order.calculateOrderPrice(),
+    freight:
+      request.body.from && request.body.to ? order.calculateShipmentOrder() : 0,
+  });
 });
 
 app.use(
   (error: Error, request: Request, response: Response, next: NextFunction) => {
     if (error instanceof AppError) {
-      return response.status(200).json({
-        status: 'error',
+      return response.status(error.statusCode).json({
         message: error.message,
       });
     }
     console.log(error);
-    return response.status(200).json({
-      status: 'error',
+    return response.status(500).json({
       message: 'Internal Server Error',
     });
   },

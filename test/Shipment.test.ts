@@ -23,6 +23,6 @@ test.each([
 ])(
   'Should calculate shipment for a %s',
   async (condition, condition_object, result) => {
-    expect(order.calculateShipment(condition_object)).toBe(result);
+    expect(order.calculateShipmentProduct(condition_object)).toBe(result);
   },
 );

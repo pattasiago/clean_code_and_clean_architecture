@@ -11,7 +11,8 @@ class Product {
     public width: number,
     public depth: number,
   ) {
-    if (this.quantity < 0) throw new AppError('Quantity cannot be less than 0');
+    if (this.quantity <= 0)
+      throw new AppError('Quantity cannot be less than 0');
     if (this.weight <= 0)
       throw new AppError('Weight cannot be less than or equal to 0');
     if (this.height <= 0)

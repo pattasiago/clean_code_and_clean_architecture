@@ -34,11 +34,13 @@ export default class Order {
     // if (expiry_date < current_date) throw new AppError('Coupon has Expired');
     // this.discount_in_percentage = discount_in_percentage;
     this.discount_in_percentage = 0;
-    this.couponValidationHandler.validate({
-      discount_in_percentage,
-      expiry_date,
-    });
-    this.discount_in_percentage = discount_in_percentage;
+    if (
+      this.couponValidationHandler.validate({
+        discount_in_percentage,
+        expiry_date,
+      })
+    )
+      this.discount_in_percentage = discount_in_percentage;
     return;
   }
 
@@ -50,9 +52,21 @@ export default class Order {
     return finalPrice - (finalPrice * this.discount_in_percentage) / 100;
   }
 
-  calculateShipment(product: Product) {
-    const shipment =
-      DISTANCE * product.calculateVolume() * (product.calculateDensity() / 100);
+  calculateShipmentProduct(product: Product) {
+    return (
+      product.quantity *
+      (DISTANCE *
+        product.calculateVolume() *
+        (product.calculateDensity() / 100))
+    );
+  }
+
+  calculateShipmentOrder() {
+    let shipment = 0;
+    for (const product of this.products) {
+      shipment += this.calculateShipmentProduct(product);
+    }
+
     return shipment > MIN_SHIPMENT_PRICE ? shipment : MIN_SHIPMENT_PRICE;
   }
 }

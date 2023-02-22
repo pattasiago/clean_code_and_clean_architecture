@@ -13,7 +13,7 @@ export default class CouponValueValidationHandler
         coupon.discount_in_percentage <= 100
       )
     )
-      throw new AppError('Coupon Invalid');
+      return false;
     if (!this.next) return true;
     return this.next.validate(coupon);
   }
