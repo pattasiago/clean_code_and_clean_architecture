@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --inspect --transpile-only --ignore-watch node_modules src/API.ts",
+    "dev": "ts-node-dev --inspect --transpile-only --ignore-watch node_modules src/api.ts",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
