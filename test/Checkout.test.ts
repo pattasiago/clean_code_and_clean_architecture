@@ -1,5 +1,11 @@
+import Sinon from 'sinon';
 import Checkout from '../src/Checkout';
+import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
+import CurrencyGateway from '../src/CurrencyGateway';
+import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
 import AppError from '../src/Error';
+import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
+import ProductsRepository from '../src/ProductsRepository';
 
 let checkout: Checkout;
 
@@ -160,11 +166,106 @@ test('Should create an order with 1 product calculating the freight with min val
   expect(output.freight).toBe(10);
 });
 
-test('Should create an order with 1 product in dolar', async function () {
+test('Should create an order with 1 product in dolar using stub', async function () {
+  const stubCurrencyGateway = Sinon.stub(
+    CurrencyGatewayHttp.prototype,
+    'getCurrencies',
+  ).resolves({
+    usd: 3,
+  });
+
+  const stubProductRepository = Sinon.stub(
+    ProductRepositoryDatabase.prototype,
+    'getProduct',
+  ).resolves({
+    rows: [
+      {
+        id: 8,
+        description: 'A',
+        price: 12,
+        width: 100,
+        height: 200,
+        depth: 50,
+        weight: 40,
+        currency: 'USD',
+      },
+    ],
+  });
+
   const input = {
     cpf: '714.318.330-02',
     products: [{ id: 8, qty: 1 }],
   };
   const output = await checkout.execute(input);
   expect(output.message).toBe(36);
+  stubCurrencyGateway.restore();
+  stubProductRepository.restore();
+});
+
+test('Should create an order with 3 products, apply 10% discount, and calculates the final order price with spy', async function () {
+  const spy = Sinon.spy(CouponRepositoryDatabase.prototype, 'getCoupon');
+
+  const input = {
+    cpf: '714.318.330-02',
+    products: [
+      { id: 1, qty: 2 },
+      { id: 2, qty: 1 },
+      { id: 3, qty: 10 },
+    ],
+    discount: 'VALE10',
+  };
+  const output = await checkout.execute(input);
+  expect(output.message).toBe(148.5);
+  expect(spy.calledOnce).toBeTruthy();
+  expect(spy.calledWith('VALE10')).toBeTruthy();
+});
+
+test('Should create an order with 1 product in dolar using fake', async function () {
+  const currencyGateway: CurrencyGateway = {
+    async getCurrencies(): Promise<any> {
+      return {
+        usd: 3,
+      };
+    },
+  };
+  const productRepo: ProductsRepository = {
+    async getProduct(): Promise<any> {
+      return {
+        rows: [
+          {
+            id: 8,
+            description: 'A',
+            price: 12,
+            width: 100,
+            height: 200,
+            depth: 50,
+            weight: 40,
+            currency: 'USD',
+          },
+        ],
+      };
+    },
+  };
+  checkout = new Checkout(currencyGateway, productRepo);
+  const input = {
+    cpf: '714.318.330-02',
+    products: [{ id: 8, qty: 1 }],
+  };
+  const output = await checkout.execute(input);
+  expect(output.message).toBe(36);
+});
+
+test('Should create an order with 1 product in dolar using mock', async function () {
+  const mockCurrencyGateway = Sinon.mock(CurrencyGatewayHttp.prototype);
+  mockCurrencyGateway.expects('getCurrencies').once().resolves({
+    usd: 3,
+  });
+  const input = {
+    cpf: '714.318.330-02',
+    products: [{ id: 8, qty: 1 }],
+  };
+  const output = await checkout.execute(input);
+  expect(output.message).toBe(36);
+  mockCurrencyGateway.verify();
+  mockCurrencyGateway.restore();
 });

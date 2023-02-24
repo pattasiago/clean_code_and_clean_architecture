@@ -2,7 +2,6 @@ import Product from './Product';
 import AppError from './Error';
 import CouponValidationHandler from './CouponDateValidationHandler';
 
-const DISTANCE = 1000;
 const MIN_SHIPMENT_PRICE = 10;
 
 export default class Order {
@@ -52,19 +51,10 @@ export default class Order {
     return finalPrice - (finalPrice * this.discount_in_percentage) / 100;
   }
 
-  calculateShipmentProduct(product: Product) {
-    return (
-      product.quantity *
-      (DISTANCE *
-        product.calculateVolume() *
-        (product.calculateDensity() / 100))
-    );
-  }
-
   calculateShipmentOrder() {
     let shipment = 0;
     for (const product of this.products) {
-      shipment += this.calculateShipmentProduct(product);
+      shipment += Product.calculateShipmentProduct(product);
     }
 
     return shipment > MIN_SHIPMENT_PRICE ? shipment : MIN_SHIPMENT_PRICE;

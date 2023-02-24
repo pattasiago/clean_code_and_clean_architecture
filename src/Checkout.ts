@@ -7,6 +7,10 @@ import AppError from './Error';
 import ProductRepositoryDatabase from './ProductRepositoryDatabase';
 import CouponRepositoryDatabase from './CouponRepositoryDatabase';
 import CurrencyGatewayHttp from './CurrencyGatewayHttp';
+import CurrencyGateway from './CurrencyGateway';
+import ProductsRepository from './ProductsRepository';
+import CouponRepository from './CouponRepository';
+
 const couponDateValidation = new CouponDateValidationHandler();
 const couponValueValidation = new CouponValueValidationHandler(
   couponDateValidation,
@@ -16,11 +20,13 @@ const couponZeroValueValidation = new CouponZeroValueValidationHandler(
 );
 
 export default class Checkout {
+  constructor(
+    readonly currencyGateway: CurrencyGateway = new CurrencyGatewayHttp(),
+    readonly productRepo: ProductsRepository = new ProductRepositoryDatabase(),
+    readonly couponRepo: CouponRepository = new CouponRepositoryDatabase(),
+  ) {}
   async execute(input: Input): Promise<Output> {
-    const productRepo = new ProductRepositoryDatabase();
-    const coupontRepo = new CouponRepositoryDatabase();
-    const currencyGateway = new CurrencyGatewayHttp();
-    const currencies = await currencyGateway.getCurrencies();
+    const currencies = await this.currencyGateway.getCurrencies();
     const cpf: string = input.cpf;
     const products = input.products ? input.products : [];
     const discount = input.discount ? input.discount : '';
@@ -29,7 +35,7 @@ export default class Checkout {
       throw new AppError('There is no product inserted');
     }
     for (const product of products) {
-      const res_product: any = await productRepo.getProduct(product.id);
+      const res_product: any = await this.productRepo.getProduct(product.id);
       if (res_product.rows[0].currency === 'USD') {
         res_product.rows[0].price =
           parseFloat(res_product.rows[0].price) * currencies.usd;
@@ -48,7 +54,7 @@ export default class Checkout {
       );
     }
 
-    const coupon: any = await coupontRepo.getCoupon(discount);
+    const coupon: any = await this.couponRepo.getCoupon(discount);
     order.applyDiscount(
       coupon.rows[0]?.percentage ? coupon.rows[0].percentage : 0,
       new Date(coupon.rows[0]?.expiry ? coupon.rows[0].expiry : '1994-01-01'),

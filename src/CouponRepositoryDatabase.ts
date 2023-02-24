@@ -1,4 +1,5 @@
 import { Database } from 'sqlite3';
+import CouponRepository from './CouponRepository';
 
 const db = new Database('projectdb.sqlite');
 
@@ -13,7 +14,7 @@ const query = function (db: any, sql: any, params: any) {
   });
 };
 
-export default class CouponRepositoryDatabase {
+export default class CouponRepositoryDatabase implements CouponRepository {
   async getCoupon(discount: string): Promise<any> {
     return query(
       db,

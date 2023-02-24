@@ -1,5 +1,6 @@
 import AppError from './Error';
 
+const DISTANCE = 1000;
 class Product {
   constructor(
     public id: number,
@@ -40,6 +41,15 @@ class Product {
 
   getWeight() {
     return this.weight;
+  }
+
+  static calculateShipmentProduct(product: Product) {
+    return (
+      product.quantity *
+      (DISTANCE *
+        product.calculateVolume() *
+        (product.calculateDensity() / 100))
+    );
   }
 }
 

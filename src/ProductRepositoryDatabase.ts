@@ -1,4 +1,5 @@
 import { Database } from 'sqlite3';
+import ProductsRepository from './ProductsRepository';
 
 const db = new Database('projectdb.sqlite');
 
@@ -13,7 +14,7 @@ const query = function (db: any, sql: any, params: any) {
   });
 };
 
-export default class ProductRepositoryDatabase {
+export default class ProductRepositoryDatabase implements ProductsRepository {
   async getProduct(id: number): Promise<any> {
     return query(db, `SELECT * FROM product WHERE id=${id}`, []);
   }
