@@ -13,7 +13,7 @@ test('Should create an order with 3 products and calculates the final order pric
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
-  expect(output.message).toBe(165);
+  expect(output.total).toBe(165);
 });
 
 test('Should create an order with 3 products, apply 10% discount, and calculates the final order price', async function () {
@@ -28,7 +28,7 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
-  expect(output.message).toBe(148.5);
+  expect(output.total).toBe(148.5);
 });
 
 const cases = [
@@ -50,7 +50,7 @@ test.each(cases)(
     };
     const response = await axios.post('http://localhost:3000/checkout', input);
     const output = response.data;
-    expect(output.message).toBe(165);
+    expect(output.total).toBe(165);
   },
 );
 
@@ -86,7 +86,7 @@ test('Should not apply discount an order if coupon has expired', async function 
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
-  expect(output.message).toBe(165);
+  expect(output.total).toBe(165);
 });
 
 test('Should not create if a product has negative quantity', async function () {
@@ -149,7 +149,7 @@ test('Should create an order with 1 product calculating the freight', async func
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
-  expect(output.message).toBe(110);
+  expect(output.total).toBe(110);
   expect(output.freight).toBe(60);
 });
 
@@ -162,6 +162,6 @@ test('Should create an order with 1 product calculating the freight with min val
   };
   const response = await axios.post('http://localhost:3000/checkout', input);
   const output = response.data;
-  expect(output.message).toBe(20);
+  expect(output.total).toBe(20);
   expect(output.freight).toBe(10);
 });

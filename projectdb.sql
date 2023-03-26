@@ -1,5 +1,18 @@
 DROP TABLE IF EXISTS product;
 DROP TABLE IF EXISTS coupon;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS order_products;
+
+CREATE TABLE orders (
+  id VARCHAR(32) PRIMARY KEY,
+  cpf INTEGER NOT NULL,
+  freight REAL NOT NULL,
+  total REAL NOT NULL,
+  coupon VARCHAR(10) REFERENCES coupon(code),
+  coupon_valid BOOLEAN,
+  date datetime default (STRFTIME('%Y-%m-%d', 'NOW')),
+  serial_number text NOT NULL
+);
 
 CREATE TABLE product (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -15,7 +28,18 @@ CREATE TABLE product (
 CREATE TABLE coupon (
   code VARCHAR(10) PRIMARY KEY NOT NULL,
   percentage NUMBER NOT NULL,
-  expiry REAL NOT NULL
+  expiry datetime NOT NULL
+);
+
+
+CREATE TABLE order_products (
+  id_order VARCHAR(32) NOT NULL REFERENCES orders(id),
+  id_product INTEGER NOT NULL REFERENCES product(id),
+  qty INTEGER NOT NULL CHECK(qty > 0),
+  price Number NOT NULL CHECK(qty > 0),
+  -- FOREIGN KEY (id_order) REFERENCES orders(id),
+  -- FOREIGN KEY (id_product) REFERENCES product(id),
+  CONSTRAINT fk_order_products_unique UNIQUE (id_order, id_product)
 );
 
 insert into product (description, price, height, width, depth, weight, currency) values ('camera', 10, 20, 15, 10, 1, "BRL");

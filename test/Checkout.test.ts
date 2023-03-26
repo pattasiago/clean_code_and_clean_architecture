@@ -4,17 +4,24 @@ import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
 import CurrencyGateway from '../src/CurrencyGateway';
 import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
 import AppError from '../src/Error';
+import GetOrder from '../src/GetOrder';
 import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
 import ProductsRepository from '../src/ProductsRepository';
+import crypto from 'crypto';
+import OrderRepositoryDatabase from '../src/OrderRepositoryDatabase';
 
 let checkout: Checkout;
+let getOrder: GetOrder;
 
 beforeEach(() => {
   checkout = new Checkout();
+  getOrder = new GetOrder();
 });
 
 test('Should create an order with 3 products and calculates the final order price', async function () {
+  const uuid = crypto.randomUUID();
   const input = {
+    uuid,
     cpf: '714.318.330-02',
     products: [
       { id: 1, qty: 2 },
@@ -22,8 +29,10 @@ test('Should create an order with 3 products and calculates the final order pric
       { id: 3, qty: 10 },
     ],
   };
-  const output = await checkout.execute(input);
-  expect(output.message).toBe(165);
+  // const output = await checkout.execute(input);
+  await checkout.execute(input);
+  const output = await getOrder.execute(uuid);
+  expect(output.total).toBe(165);
 });
 
 test('Should create an order with 3 products, apply 10% discount, and calculates the final order price', async function () {
@@ -37,7 +46,7 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
     discount: 'VALE10',
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(148.5);
+  expect(output.total).toBe(148.5);
 });
 
 const cases = [
@@ -58,7 +67,7 @@ test.each(cases)(
       discount: test as string,
     };
     const output = await checkout.execute(input);
-    expect(output.message).toBe(165);
+    expect(output.total).toBe(165);
   },
 );
 
@@ -93,7 +102,7 @@ test('Should not apply discount an order if coupon has expired', async function 
     discount: 'EXPIRED',
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(165);
+  expect(output.total).toBe(165);
 });
 
 test('Should not create if a product has negative quantity', async function () {
@@ -150,7 +159,7 @@ test('Should create an order with 1 product calculating the freight', async func
     to: '88015600',
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(110);
+  expect(output.total).toBe(110);
   expect(output.freight).toBe(60);
 });
 
@@ -162,7 +171,7 @@ test('Should create an order with 1 product calculating the freight with min val
     to: '88015600',
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(20);
+  expect(output.total).toBe(20);
   expect(output.freight).toBe(10);
 });
 
@@ -197,7 +206,7 @@ test('Should create an order with 1 product in dolar using stub', async function
     products: [{ id: 8, qty: 1 }],
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(36);
+  expect(output.total).toBe(36);
   stubCurrencyGateway.restore();
   stubProductRepository.restore();
 });
@@ -215,7 +224,7 @@ test('Should create an order with 3 products, apply 10% discount, and calculates
     discount: 'VALE10',
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(148.5);
+  expect(output.total).toBe(148.5);
   expect(spy.calledOnce).toBeTruthy();
   expect(spy.calledWith('VALE10')).toBeTruthy();
 });
@@ -252,7 +261,7 @@ test('Should create an order with 1 product in dolar using fake', async function
     products: [{ id: 8, qty: 1 }],
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(36);
+  expect(output.total).toBe(36);
 });
 
 test('Should create an order with 1 product in dolar using mock', async function () {
@@ -265,7 +274,29 @@ test('Should create an order with 1 product in dolar using mock', async function
     products: [{ id: 8, qty: 1 }],
   };
   const output = await checkout.execute(input);
-  expect(output.message).toBe(36);
+  expect(output.total).toBe(36);
   mockCurrencyGateway.verify();
   mockCurrencyGateway.restore();
+});
+
+test('Should create an order and verify the serial number', async function () {
+  const stubGetOrder = Sinon.stub(
+    OrderRepositoryDatabase.prototype,
+    'getLastSerialNumber',
+  ).resolves('202100000000');
+  const uuid = crypto.randomUUID();
+  const input = {
+    uuid,
+    cpf: '714.318.330-02',
+    products: [
+      { id: 1, qty: 2 },
+      { id: 2, qty: 1 },
+      { id: 3, qty: 10 },
+    ],
+    discount: 'VALE10',
+  };
+  await checkout.execute(input);
+  const output = await getOrder.execute(uuid);
+  expect(output.serial).toBe('202100000001');
+  stubGetOrder.restore();
 });

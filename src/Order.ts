@@ -24,23 +24,17 @@ export default class Order {
   }
 
   applyDiscount(discount_in_percentage: number, expiry_date: Date) {
-    // const current_date: Date = new Date();
-    // current_date.setHours(0, 0, 0, 0);
-    // this.discount_in_percentage = 0;
-    // if (discount_in_percentage === 0) return;
-    // if (!(discount_in_percentage > 0 && discount_in_percentage <= 100))
-    //   throw new AppError('Discount Invalid');
-    // if (expiry_date < current_date) throw new AppError('Coupon has Expired');
-    // this.discount_in_percentage = discount_in_percentage;
     this.discount_in_percentage = 0;
     if (
       this.couponValidationHandler.validate({
         discount_in_percentage,
         expiry_date,
       })
-    )
+    ) {
       this.discount_in_percentage = discount_in_percentage;
-    return;
+      return true;
+    }
+    return false;
   }
 
   calculateOrderPrice() {
@@ -51,9 +45,9 @@ export default class Order {
     return finalPrice - (finalPrice * this.discount_in_percentage) / 100;
   }
 
-  calculateShipmentOrder() {
+  static calculateShipmentOrder(products: Product[]) {
     let shipment = 0;
-    for (const product of this.products) {
+    for (const product of products) {
       shipment += Product.calculateShipmentProduct(product);
     }
 
