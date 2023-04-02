@@ -1,58 +1,45 @@
-DROP TABLE IF EXISTS product;
-DROP TABLE IF EXISTS coupon;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS order_products;
+drop table IF EXISTS item;
+drop table IF EXISTS orders;
+drop table IF EXISTS coupon;
+drop table IF EXISTS product;
 
-CREATE TABLE orders (
-  id VARCHAR(32) PRIMARY KEY,
-  cpf INTEGER NOT NULL,
-  freight REAL NOT NULL,
-  total REAL NOT NULL,
-  coupon VARCHAR(10) REFERENCES coupon(code),
-  coupon_valid BOOLEAN,
-  date datetime default (STRFTIME('%Y-%m-%d', 'NOW')),
-  serial_number text NOT NULL
+create table product (
+	id_product integer,
+	description text,
+	price numeric,
+	width integer,
+	height integer,
+	length integer,
+	weight numeric,
+	currency text
 );
 
-CREATE TABLE product (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  description VARCHAR(200) NOT NULL,
-  price Number NOT NULL,
-  height Number NOT NULL,
-  width Number NOT NULL,
-  depth Number NOT NULL,
-  weight Number NOT NULL,
-  currency VARCHAR(3) NOT NULL
+insert into product (id_product, description, price, width, height, length, weight, currency) values (1, 'A', 1000, 100, 30, 10, 3, 'BRL');
+insert into product (id_product, description, price, width, height, length, weight, currency) values (2, 'B', 5000, 50, 50, 50, 22, 'BRL');
+insert into product (id_product, description, price, width, height, length, weight, currency) values (3, 'C', 30, 10, 10, 10, 0.9, 'BRL');
+insert into product (id_product, description, price, width, height, length, weight, currency) values (4, 'D', 30, -10, 10, 10, 0.9, 'BRL');
+insert into product (id_product, description, price, width, height, length, weight, currency) values (5, 'A', 1000, 100, 30, 10, 3, 'USD');
+
+create table coupon (
+	code text,
+	percentage numeric,
+	expire_date timestamp
 );
 
-CREATE TABLE coupon (
-  code VARCHAR(10) PRIMARY KEY NOT NULL,
-  percentage NUMBER NOT NULL,
-  expiry datetime NOT NULL
+insert into coupon (code, percentage, expire_date) values ('VALE20', 20, '2023-10-01T10:00:00');
+insert into coupon (code, percentage, expire_date) values ('VALE10', 10, '2022-10-01T10:00:00');
+
+create table orders (
+	id_order text,
+	cpf text,
+	code text,
+	total numeric,
+	freight numeric
 );
 
-
-CREATE TABLE order_products (
-  id_order VARCHAR(32) NOT NULL REFERENCES orders(id),
-  id_product INTEGER NOT NULL REFERENCES product(id),
-  qty INTEGER NOT NULL CHECK(qty > 0),
-  price Number NOT NULL CHECK(qty > 0),
-  -- FOREIGN KEY (id_order) REFERENCES orders(id),
-  -- FOREIGN KEY (id_product) REFERENCES product(id),
-  CONSTRAINT fk_order_products_unique UNIQUE (id_order, id_product)
+create table item (
+	id_order text,
+	id_product integer,
+	price numeric,
+	quantity integer
 );
-
-insert into product (description, price, height, width, depth, weight, currency) values ('camera', 10, 20, 15, 10, 1, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('guitarra', 25, 100, 30, 10, 3, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('geladeira', 12, 200, 100, 50, 40, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('invalid weight', 12, 5, 32, 21, -5, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('invalid depth', 12, 5, 32, -21, 5, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('invalid width', 12, 5, -32, 21, 5, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('invalid height', 12, -5, 32, 21, 5, "BRL");
-insert into product (description, price, height, width, depth, weight, currency) values ('geladeira em dolar', 12, 200, 100, 50, 40, "USD");
-
-
-insert into coupon (code, percentage, expiry) values ('VALE10', 10,  DATE('now','+1 day'));
-insert into coupon (code, percentage, expiry) values ('INVALID-1', -1,  DATE('now','+1 day'));
-insert into coupon (code, percentage, expiry) values ('INVALID101', 101,  DATE('now','+1 day'));
-insert into coupon (code, percentage, expiry) values ('EXPIRED', 15,  DATE('now','-1 day'));

@@ -1,235 +1,205 @@
-import Sinon from 'sinon';
-import Checkout from '../src/Checkout';
+import Checkout from '../src/application/usecase/Checkout';
+import sinon from 'sinon';
+import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
+import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
 import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
 import CurrencyGateway from '../src/CurrencyGateway';
-import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
-import AppError from '../src/Error';
-import GetOrder from '../src/GetOrder';
-import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
-import ProductsRepository from '../src/ProductsRepository';
+import ProductRepository from '../src/ProductRepository';
 import crypto from 'crypto';
+import GetOrder from '../src/application/usecase/GetOrder';
 import OrderRepositoryDatabase from '../src/OrderRepositoryDatabase';
+import Product from '../src/domain/entity/Product';
 
 let checkout: Checkout;
 let getOrder: GetOrder;
 
-beforeEach(() => {
+beforeEach(function () {
   checkout = new Checkout();
   getOrder = new GetOrder();
 });
 
-test('Should create an order with 3 products and calculates the final order price', async function () {
+test('Não deve aceitar um pedido com cpf inválido', async function () {
+  const input = {
+    cpf: '406.302.170-27',
+    items: [],
+  };
+  expect(() => checkout.execute(input)).rejects.toThrow(
+    new Error('Invalid cpf'),
+  );
+});
+
+test('Deve criar um pedido vazio', async function () {
+  const input = {
+    cpf: '407.302.170-27',
+    items: [],
+  };
+  const output = await checkout.execute(input);
+  expect(output.total).toBe(0);
+});
+
+test('Deve criar um pedido com 3 produtos', async function () {
   const uuid = crypto.randomUUID();
   const input = {
     uuid,
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: 1 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 2, quantity: 1 },
+      { idProduct: 3, quantity: 3 },
     ],
   };
-  // const output = await checkout.execute(input);
   await checkout.execute(input);
   const output = await getOrder.execute(uuid);
-  expect(output.total).toBe(165);
+  expect(output.total).toBe(6090);
 });
 
-test('Should create an order with 3 products, apply 10% discount, and calculates the final order price', async function () {
+test('Deve criar um pedido com 3 produtos com cupom de desconto', async function () {
   const input = {
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: 1 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 2, quantity: 1 },
+      { idProduct: 3, quantity: 3 },
     ],
-    discount: 'VALE10',
+    coupon: 'VALE20',
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(148.5);
+  expect(output.total).toBe(4872);
 });
 
-const cases = [
-  ['less', 0, 'INVALID-1'],
-  ['greater', 100, 'INVALID101'],
-];
-
-test.each(cases)(
-  'Should not apply discount if coupon discount is %s than %d, e.g. discount_code = %s',
-  async (condition, condition_limit, test) => {
-    const input = {
-      cpf: '714.318.330-02',
-      products: [
-        { id: 1, qty: 2 },
-        { id: 2, qty: 1 },
-        { id: 3, qty: 10 },
-      ],
-      discount: test as string,
-    };
-    const output = await checkout.execute(input);
-    expect(output.total).toBe(165);
-  },
-);
-
-test('Should not create an order with invalid cpf', async function () {
+test('Deve criar um pedido com 3 produtos com cupom de desconto expirado', async function () {
   const input = {
-    cpf: '714.318.330-01',
-    products: [],
-  };
-  expect(() => checkout.execute(input)).rejects.toMatchObject(
-    new AppError('Invalid CPF'),
-  );
-});
-
-test('Should not create an order with valid cpf', async function () {
-  const input = {
-    cpf: '714.318.330-02',
-    products: [],
-  };
-  expect(() => checkout.execute(input)).rejects.toMatchObject(
-    new AppError('There is no product inserted'),
-  );
-});
-
-test('Should not apply discount an order if coupon has expired', async function () {
-  const input = {
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: 1 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 2, quantity: 1 },
+      { idProduct: 3, quantity: 3 },
     ],
-    discount: 'EXPIRED',
+    coupon: 'VALE10',
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(165);
+  expect(output.total).toBe(6090);
 });
 
-test('Should not create if a product has negative quantity', async function () {
+test('Não deve criar um pedido com quantidade negativa', async function () {
   const input = {
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: -2 },
-      { id: 3, qty: 10 },
-    ],
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 1, quantity: -1 }],
   };
-  expect(() => checkout.execute(input)).rejects.toMatchObject(
-    new AppError('Quantity cannot be less than 0'),
+  expect(() => checkout.execute(input)).rejects.toThrow(
+    new Error('Invalid quantity'),
   );
 });
 
-test('Should not create if the order has the same product more than one time', async function () {
+test('Não deve criar um pedido com item duplicado', async function () {
   const input = {
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 1, qty: 12 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 1, quantity: 1 },
     ],
   };
-  expect(() => checkout.execute(input)).rejects.toMatchObject(
-    new AppError('Same Product Registered Twice'),
+  expect(() => checkout.execute(input)).rejects.toThrow(
+    new Error('Duplicated item'),
   );
 });
 
-test.each([
-  ['Height', 7],
-  ['Width', 6],
-  ['Depth', 5],
-  ['Weight', 4],
-])(
-  'Should throw an error if %s is negative',
-  async (condition, condition_id) => {
-    const input = {
-      cpf: '714.318.330-02',
-      products: [{ id: condition_id, qty: 2 }],
-    };
-    expect(() => checkout.execute(input)).rejects.toMatchObject(
-      new AppError(`${condition} cannot be less than or equal to 0`),
-    );
-  },
-);
-
-test('Should create an order with 1 product calculating the freight', async function () {
+test('Deve criar um pedido com 1 produto calculando o frete', async function () {
   const input = {
-    cpf: '714.318.330-02',
-    products: [{ id: 2, qty: 2 }],
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 1, quantity: 3 }],
     from: '22060030',
     to: '88015600',
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(110);
-  expect(output.freight).toBe(60);
+  expect(output.freight).toBe(90);
+  expect(output.total).toBe(3090);
 });
 
-test('Should create an order with 1 product calculating the freight with min value', async function () {
+test('Não deve criar um pedido se o produto tiver alguma dimensão negativa', async function () {
   const input = {
-    cpf: '714.318.330-02',
-    products: [{ id: 1, qty: 1 }],
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 4, quantity: 1 }],
+  };
+  expect(() => checkout.execute(input)).rejects.toThrow(
+    new Error('Invalid dimension'),
+  );
+});
+
+test('Deve criar um pedido com 1 produto calculando o frete com valor mínimo', async function () {
+  const input = {
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 3, quantity: 1 }],
     from: '22060030',
     to: '88015600',
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(20);
   expect(output.freight).toBe(10);
+  expect(output.total).toBe(40);
 });
 
-test('Should create an order with 1 product in dolar using stub', async function () {
-  const stubCurrencyGateway = Sinon.stub(
-    CurrencyGatewayHttp.prototype,
-    'getCurrencies',
-  ).resolves({
-    usd: 3,
-  });
-
-  const stubProductRepository = Sinon.stub(
-    ProductRepositoryDatabase.prototype,
-    'getProduct',
-  ).resolves({
-    rows: [
-      {
-        id: 8,
-        description: 'A',
-        price: 12,
-        width: 100,
-        height: 200,
-        depth: 50,
-        weight: 40,
-        currency: 'USD',
-      },
-    ],
-  });
-
+test('Deve criar um pedido com 1 produto em dólar usando um stub', async function () {
+  const stubCurrencyGateway = sinon
+    .stub(CurrencyGatewayHttp.prototype, 'getCurrencies')
+    .resolves({
+      usd: 3,
+    });
+  const stubProductRepository = sinon
+    .stub(ProductRepositoryDatabase.prototype, 'getProduct')
+    .resolves(new Product(5, 'A', 1000, 10, 10, 10, 10, 'USD'));
   const input = {
-    cpf: '714.318.330-02',
-    products: [{ id: 8, qty: 1 }],
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 5, quantity: 1 }],
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(36);
+  expect(output.total).toBe(3000);
   stubCurrencyGateway.restore();
   stubProductRepository.restore();
 });
 
-test('Should create an order with 3 products, apply 10% discount, and calculates the final order price with spy', async function () {
-  const spy = Sinon.spy(CouponRepositoryDatabase.prototype, 'getCoupon');
-
+test('Deve criar um pedido com 3 produtos com cupom de desconto com spy', async function () {
+  const spyProductRepository = sinon.spy(
+    ProductRepositoryDatabase.prototype,
+    'getProduct',
+  );
+  const spyCouponRepository = sinon.spy(
+    CouponRepositoryDatabase.prototype,
+    'getCoupon',
+  );
   const input = {
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: 1 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 2, quantity: 1 },
+      { idProduct: 3, quantity: 3 },
     ],
-    discount: 'VALE10',
+    coupon: 'VALE20',
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(148.5);
-  expect(spy.calledOnce).toBeTruthy();
-  expect(spy.calledWith('VALE10')).toBeTruthy();
+  expect(output.total).toBe(4872);
+  expect(spyCouponRepository.calledOnce).toBeTruthy();
+  expect(spyCouponRepository.calledWith('VALE20')).toBeTruthy();
+  expect(spyProductRepository.calledThrice).toBeTruthy();
+  spyCouponRepository.restore();
+  spyProductRepository.restore();
 });
 
-test('Should create an order with 1 product in dolar using fake', async function () {
+test('Deve criar um pedido com 1 produto em dólar usando um mock', async function () {
+  const mockCurrencyGateway = sinon.mock(CurrencyGatewayHttp.prototype);
+  mockCurrencyGateway.expects('getCurrencies').once().resolves({
+    usd: 3,
+  });
+  const input = {
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 5, quantity: 1 }],
+  };
+  const output = await checkout.execute(input);
+  expect(output.total).toBe(3000);
+  mockCurrencyGateway.verify();
+  mockCurrencyGateway.restore();
+});
+
+test('Deve criar um pedido com 1 produto em dólar usando um fake', async function () {
   const currencyGateway: CurrencyGateway = {
     async getCurrencies(): Promise<any> {
       return {
@@ -237,66 +207,36 @@ test('Should create an order with 1 product in dolar using fake', async function
       };
     },
   };
-  const productRepo: ProductsRepository = {
-    async getProduct(): Promise<any> {
-      return {
-        rows: [
-          {
-            id: 8,
-            description: 'A',
-            price: 12,
-            width: 100,
-            height: 200,
-            depth: 50,
-            weight: 40,
-            currency: 'USD',
-          },
-        ],
-      };
+  const productRepository: ProductRepository = {
+    async getProduct(idProduct: number): Promise<any> {
+      return new Product(6, 'A', 1000, 10, 10, 10, 10, 'USD');
     },
   };
-  checkout = new Checkout(currencyGateway, productRepo);
+  checkout = new Checkout(currencyGateway, productRepository);
   const input = {
-    cpf: '714.318.330-02',
-    products: [{ id: 8, qty: 1 }],
+    cpf: '407.302.170-27',
+    items: [{ idProduct: 6, quantity: 1 }],
   };
   const output = await checkout.execute(input);
-  expect(output.total).toBe(36);
+  expect(output.total).toBe(3000);
 });
 
-test('Should create an order with 1 product in dolar using mock', async function () {
-  const mockCurrencyGateway = Sinon.mock(CurrencyGatewayHttp.prototype);
-  mockCurrencyGateway.expects('getCurrencies').once().resolves({
-    usd: 3,
-  });
-  const input = {
-    cpf: '714.318.330-02',
-    products: [{ id: 8, qty: 1 }],
-  };
-  const output = await checkout.execute(input);
-  expect(output.total).toBe(36);
-  mockCurrencyGateway.verify();
-  mockCurrencyGateway.restore();
-});
-
-test('Should create an order and verify the serial number', async function () {
-  const stubGetOrder = Sinon.stub(
-    OrderRepositoryDatabase.prototype,
-    'getLastSerialNumber',
-  ).resolves('202100000000');
+test('Deve criar um pedido e verificar o código de série', async function () {
+  const stub = sinon
+    .stub(OrderRepositoryDatabase.prototype, 'count')
+    .resolves(1);
   const uuid = crypto.randomUUID();
   const input = {
     uuid,
-    cpf: '714.318.330-02',
-    products: [
-      { id: 1, qty: 2 },
-      { id: 2, qty: 1 },
-      { id: 3, qty: 10 },
+    cpf: '407.302.170-27',
+    items: [
+      { idProduct: 1, quantity: 1 },
+      { idProduct: 2, quantity: 1 },
+      { idProduct: 3, quantity: 3 },
     ],
-    discount: 'VALE10',
   };
   await checkout.execute(input);
   const output = await getOrder.execute(uuid);
-  expect(output.serial).toBe('202100000001');
-  stubGetOrder.restore();
+  expect(output.code).toBe('202300000001');
+  stub.restore();
 });

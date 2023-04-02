@@ -1,4 +1,5 @@
 import { Database } from 'sqlite3';
+import Coupon from './domain/entity/Coupon';
 import CouponRepository from './CouponRepository';
 
 const db = new Database('projectdb.sqlite');
@@ -15,11 +16,16 @@ const query = function (db: any, sql: any, params: any) {
 };
 
 export default class CouponRepositoryDatabase implements CouponRepository {
-  async getCoupon(discount: string): Promise<any> {
-    return query(
+  async getCoupon(code: string): Promise<any> {
+    const coupon: any = await query(
       db,
-      `SELECT percentage, expiry FROM coupon WHERE code='${discount}'`,
+      `SELECT * FROM coupon WHERE code='${code}'`,
       [],
+    );
+    return new Coupon(
+      coupon.rows[0].code,
+      parseFloat(coupon.rows[0].percentage),
+      coupon.rows[0].expire_date,
     );
   }
 }

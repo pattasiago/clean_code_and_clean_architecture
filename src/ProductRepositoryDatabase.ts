@@ -1,5 +1,6 @@
 import { Database } from 'sqlite3';
-import ProductsRepository from './ProductsRepository';
+import Product from './domain/entity/Product';
+import ProductRepository from './ProductRepository';
 
 const db = new Database('projectdb.sqlite');
 
@@ -14,8 +15,22 @@ const query = function (db: any, sql: any, params: any) {
   });
 };
 
-export default class ProductRepositoryDatabase implements ProductsRepository {
-  async getProduct(id: number): Promise<any> {
-    return query(db, `SELECT * FROM product WHERE id=${id}`, []);
+export default class ProductRepositoryDatabase implements ProductRepository {
+  async getProduct(idProduct: number): Promise<Product> {
+    const productData: any = await query(
+      db,
+      `SELECT * FROM product WHERE id_product=${idProduct}`,
+      [],
+    );
+    return new Product(
+      productData.rows[0].id_product,
+      productData.rows[0].description,
+      parseFloat(productData.rows[0].price),
+      productData.rows[0].width,
+      productData.rows[0].height,
+      productData.rows[0].length,
+      parseFloat(productData.rows[0].weight),
+      productData.rows[0].currency,
+    );
   }
 }

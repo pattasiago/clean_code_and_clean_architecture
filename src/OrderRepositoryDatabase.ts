@@ -1,5 +1,7 @@
 import { Database } from 'sqlite3';
 import OrderRepository from './OrderRepository';
+import Order from './domain/entity/Order';
+import Item from './domain/entity/Item';
 
 const db = new Database('projectdb.sqlite');
 
@@ -26,80 +28,68 @@ const insertdb = function (db: any, sql: any, params: any) {
   });
 };
 
-// const insermultipletdb = function (db: any, sql: any, params: any) {
-//   const that = db;
-//   return new Promise(function (resolve, reject) {
-//     that.run(sql, params, function (this: any, error: any) {
-//       if (error) reject(error);
-//       else resolve(this);
-//     });
-//   });
-// };
-
 export default class OrderRepositoryDatabase implements OrderRepository {
-  async getOrder(id: string): Promise<any> {
-    const order: any = await query(
+  async getById(id: string): Promise<Order> {
+    const orderData: any = await query(
       db,
-      `SELECT * FROM orders WHERE id='${id}'`,
+      `SELECT * FROM orders WHERE id_order='${id}'`,
       [],
     );
-    return order.rows[0];
-  }
 
-  async getOrders(): Promise<any> {
-    return query(db, `SELECT * FROM orders`, []);
-  }
+    const order = new Order(
+      orderData.rows[0].id_order,
+      orderData.rows[0].cpf,
+      undefined,
+      1,
+      new Date(),
+    );
 
-  async getLastSerialNumber(): Promise<any> {
-    const serialNumberQuery: any = await query(
+    const itemsData: any = await query(
       db,
-      `SELECT serial_number FROM orders ORDER BY 1 DESC LIMIT 1`,
+      `SELECT * FROM item WHERE id_order='${id}'`,
       [],
     );
-    return serialNumberQuery.rows[0]?.serial_number
-      ? serialNumberQuery.rows[0].serial_number
-      : '0';
+
+    for (const itemData of itemsData.rows) {
+      order.items.push(
+        new Item(
+          itemData.id_product,
+          parseFloat(itemData.price),
+          itemData.quantity,
+          'BRL',
+        ),
+      );
+    }
+    return order;
   }
 
-  async createOrder(order: any): Promise<any> {
-    let lastSerialNumber = await this.getLastSerialNumber();
-    if (lastSerialNumber === '0') {
-      lastSerialNumber = parseInt(`${new Date().getFullYear()}00000000`);
-    } else {
-      lastSerialNumber = parseInt(lastSerialNumber) + 1;
+  async count(): Promise<number> {
+    const options: any = await query(
+      db,
+      'select count(*) as count from orders',
+      [],
+    );
+    return parseInt(options.rows[0].count);
+  }
+
+  async save(order: Order): Promise<void> {
+    await insertdb(
+      db,
+      'insert into orders (id_order, cpf, code, total, freight) values (?, ?, ?, ?, ?)',
+      [
+        order.idOrder,
+        order.cpf.value,
+        order.code,
+        order.getTotal(),
+        order.freight,
+      ],
+    );
+    for (const item of order.items) {
+      await insertdb(
+        db,
+        'insert into item (id_order, id_product, price, quantity) values (?, ?, ?, ?)',
+        [order.idOrder, item.idProduct, item.price, item.quantity],
+      );
     }
-    lastSerialNumber = `${lastSerialNumber}`;
-    let sql =
-      'INSERT INTO orders(id, cpf, freight, total, coupon, coupon_valid, serial_number) VALUES (?,?,?,?,?,?,?)';
-
-    const createOrderid: any = await insertdb(db, sql, [
-      order.uuid,
-      order.cpf,
-      order.freight ? order.freight : 0,
-      order.total,
-      order.discount ? order.discount : 'NULL',
-      order.discount ? Number(order.coupon_valid) : 0,
-      lastSerialNumber,
-    ]);
-
-    const products = [];
-    for (let i = 0; i < order.products.length; i++) {
-      const product = [
-        createOrderid.lastID,
-        order.products[i].id,
-        order.products[i].qty,
-        order.products[i].price,
-      ];
-      products.push(...product);
-    }
-    // console.log(products);
-    const placeholders = order.products.map(() => '(?, ?, ?, ?)').join(', ');
-    sql =
-      'INSERT INTO order_products(id_order, id_product, qty, price) VALUES ' +
-      placeholders;
-
-    const createOrderProductid = await insertdb(db, sql, products);
-    // console.log(createOrderProductid);
-    return true;
   }
 }

@@ -1,21 +1,7 @@
-// interface Input {
-//   cpf: string;
-//   total: number;
-//   freight?: number;
-//   products: Products[];
-//   discount?: string;
-//   coupon_valid?: boolean;
-//   from?: string;
-//   to?: string;
-// }
-
-// interface Products {
-//   id: number;
-//   qty: number;
-//   price?: number;
-// }
+import Order from './domain/entity/Order';
 
 export default interface OrderRepository {
-  getOrder(id: string): Promise<any>;
-  createOrder(order: any): Promise<void>;
+  save(order: Order): Promise<void>;
+  getById(id: string): Promise<Order>;
+  count(): Promise<number>;
 }
