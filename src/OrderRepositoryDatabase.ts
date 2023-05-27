@@ -63,6 +63,17 @@ export default class OrderRepositoryDatabase implements OrderRepository {
     return order;
   }
 
+  async getOrders(): Promise<Order[]> {
+    const ordersData: any = await query(db, `SELECT * FROM orders`, []);
+    const orders: Order[] = [];
+    for (const order of ordersData.rows) {
+      orders.push(
+        new Order(order.id_order, order.cpf, undefined, 1, new Date()),
+      );
+    }
+    return orders;
+  }
+
   async count(): Promise<number> {
     const options: any = await query(
       db,

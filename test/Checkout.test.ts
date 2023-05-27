@@ -9,13 +9,17 @@ import crypto from 'crypto';
 import GetOrder from '../src/application/usecase/GetOrder';
 import OrderRepositoryDatabase from '../src/OrderRepositoryDatabase';
 import Product from '../src/domain/entity/Product';
+import ListOrders from '../src/application/usecase/ListOrders';
+import Order from '../src/domain/entity/Order';
 
 let checkout: Checkout;
 let getOrder: GetOrder;
+let listOrders: ListOrders;
 
 beforeEach(function () {
   checkout = new Checkout();
   getOrder = new GetOrder();
+  listOrders = new ListOrders();
 });
 
 test('Não deve aceitar um pedido com cpf inválido', async function () {
@@ -238,5 +242,31 @@ test('Deve criar um pedido e verificar o código de série', async function () {
   await checkout.execute(input);
   const output = await getOrder.execute(uuid);
   expect(output.code).toBe('202300000001');
+  stub.restore();
+});
+
+test('Deve criar um pedido e verificar o código de série', async function () {
+  const date1: Date = new Date();
+  const date2: Date = new Date();
+  const orders: Order[] = [
+    new Order('123456789', '407.302.170-27', undefined, 1, date1),
+    new Order('987654321', '407.302.170-27', undefined, 1, date2),
+  ];
+  const stub = sinon
+    .stub(OrderRepositoryDatabase.prototype, 'getOrders')
+    .resolves(orders);
+  const output = await listOrders.execute();
+  expect(output).toStrictEqual([
+    {
+      idOrder: '123456789',
+      cpf: '407.302.170-27',
+      date: date1,
+    },
+    {
+      idOrder: '987654321',
+      cpf: '407.302.170-27',
+      date: date2,
+    },
+  ]);
   stub.restore();
 });
