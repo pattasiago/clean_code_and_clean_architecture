@@ -14,8 +14,8 @@ export default class SimulateFreight {
     if (input.items) {
       for (const item of input.items) {
         const product = await this.productRepository.getProduct(item.idProduct);
-        const itemFreight = FreightCalculator.calculate(product);
-        output.freight += Math.max(itemFreight, 10) * item.quantity;
+        const itemFreight = FreightCalculator.calculate(product, item.quantity);
+        output.freight += itemFreight;
       }
     }
     return output;

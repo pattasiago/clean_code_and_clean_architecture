@@ -35,8 +35,8 @@ export default class Checkout {
       for (const item of input.items) {
         const product = await this.productRepository.getProduct(item.idProduct);
         order.addItem(product, item.quantity);
-        const itemFreight = FreightCalculator.calculate(product);
-        freight += Math.max(itemFreight, 10) * item.quantity;
+        const itemFreight = FreightCalculator.calculate(product, item.quantity);
+        freight += itemFreight;
       }
     }
     if (input.from && input.to) {
