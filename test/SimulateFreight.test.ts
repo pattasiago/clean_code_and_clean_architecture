@@ -1,9 +1,19 @@
+import Connection from '../src/Connection';
+import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
+import SQLITE from '../src/SQLITEAdapter';
 import SimulateFreight from '../src/application/usecase/SimulateFreight';
 
 let simulateFreight: SimulateFreight;
+let connection: Connection;
 
 beforeEach(function () {
-  simulateFreight = new SimulateFreight();
+  connection = new SQLITE();
+  const productRepository = new ProductRepositoryDatabase(connection);
+  simulateFreight = new SimulateFreight(productRepository);
+});
+
+afterEach(async function () {
+  await connection.close();
 });
 
 test('Deve calcular o frete para um pedido com 3 itens', async function () {

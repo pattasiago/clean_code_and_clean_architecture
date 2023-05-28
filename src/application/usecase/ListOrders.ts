@@ -1,10 +1,7 @@
 import OrderRepository from '../../OrderRepository';
-import OrderRepositoryDatabase from '../../OrderRepositoryDatabase';
 
 export default class ListOrders {
-  constructor(
-    readonly orderRepository: OrderRepository = new OrderRepositoryDatabase(),
-  ) {}
+  constructor(readonly orderRepository: OrderRepository) {}
 
   async execute(): Promise<Output[]> {
     const orders = await this.orderRepository.getOrders();

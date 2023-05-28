@@ -1,37 +1,12 @@
-import { Database } from 'sqlite3';
 import OrderRepository from './OrderRepository';
 import Order from './domain/entity/Order';
 import Item from './domain/entity/Item';
-
-const db = new Database('projectdb.sqlite');
-
-// hack to simulate node-postgres
-const query = function (db: any, sql: any, params: any) {
-  const that = db;
-  return new Promise(function (resolve, reject) {
-    that.all(sql, params, function (error: any, rows: any) {
-      if (error) reject(error);
-      else resolve({ rows: rows });
-    });
-  });
-};
-
-const insertdb = function (db: any, sql: any, params: any) {
-  const that = db;
-  return new Promise(function (resolve, reject) {
-    that.serialize(function () {
-      that.run(sql, params, function (this: any, error: any) {
-        if (error) reject(error);
-        else resolve(this);
-      });
-    });
-  });
-};
+import Connection from './Connection';
 
 export default class OrderRepositoryDatabase implements OrderRepository {
+  constructor(readonly connection: Connection) {}
   async getById(id: string): Promise<Order> {
-    const orderData: any = await query(
-      db,
+    const orderData: any = await this.connection.query(
       `SELECT * FROM orders WHERE id_order='${id}'`,
       [],
     );
@@ -44,8 +19,7 @@ export default class OrderRepositoryDatabase implements OrderRepository {
       new Date(),
     );
 
-    const itemsData: any = await query(
-      db,
+    const itemsData: any = await this.connection.query(
       `SELECT * FROM item WHERE id_order='${id}'`,
       [],
     );
@@ -64,7 +38,10 @@ export default class OrderRepositoryDatabase implements OrderRepository {
   }
 
   async getOrders(): Promise<Order[]> {
-    const ordersData: any = await query(db, `SELECT * FROM orders`, []);
+    const ordersData: any = await this.connection.query(
+      `SELECT * FROM orders`,
+      [],
+    );
     const orders: Order[] = [];
     for (const order of ordersData.rows) {
       orders.push(
@@ -75,8 +52,7 @@ export default class OrderRepositoryDatabase implements OrderRepository {
   }
 
   async count(): Promise<number> {
-    const options: any = await query(
-      db,
+    const options: any = await this.connection.query(
       'select count(*) as count from orders',
       [],
     );
@@ -84,8 +60,7 @@ export default class OrderRepositoryDatabase implements OrderRepository {
   }
 
   async save(order: Order): Promise<void> {
-    await insertdb(
-      db,
+    await this.connection.insertdb(
       'insert into orders (id_order, cpf, code, total, freight) values (?, ?, ?, ?, ?)',
       [
         order.idOrder,
@@ -96,8 +71,7 @@ export default class OrderRepositoryDatabase implements OrderRepository {
       ],
     );
     for (const item of order.items) {
-      await insertdb(
-        db,
+      await this.connection.insertdb(
         'insert into item (id_order, id_product, price, quantity) values (?, ?, ?, ?)',
         [order.idOrder, item.idProduct, item.price, item.quantity],
       );
