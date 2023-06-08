@@ -1,13 +1,14 @@
 import AxiosAdapter from './infra/http/AxiosAdapter';
-import CLIController from './infra/cli/CLIController';
-import CLIHandlerNode from './infra/cli/CLIHandlerNode';
 import CouponRepositoryDatabase from './infra/repository/CouponRepositoryDatabase';
 import CurrencyGatewayHttp from './infra/gateway/CurrencyGatewayHttp';
+import ExpressAdapter from './infra/http/ExpressAdapter';
+import HttpController from './infra/http/HttpController';
 import OrderRepositoryDatabase from './infra/repository/OrderRepositoryDatabase';
 import ProductRepositoryDatabase from './infra/repository/ProductRepositoryDatabase';
 import SQLITE from './infra/database/SQLITEAdapter';
 import Checkout from './application/usecase/Checkout';
 
+const httpServer = new ExpressAdapter();
 const connection = new SQLITE();
 const httpClient = new AxiosAdapter();
 const currencyGateway = new CurrencyGatewayHttp(httpClient);
@@ -20,5 +21,6 @@ const checkout = new Checkout(
   couponRepository,
   orderRepository,
 );
-const handler = new CLIHandlerNode();
-new CLIController(handler, checkout);
+
+new HttpController(httpServer, checkout);
+httpServer.list(3000);

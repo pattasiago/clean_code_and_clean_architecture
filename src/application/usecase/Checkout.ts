@@ -1,15 +1,14 @@
-import CouponRepository from '../../CouponRepository';
-import CurrencyGateway from '../../CurrencyGateway';
-import CurrencyGatewayHttp from '../../CurrencyGatewayHttp';
+import CouponRepository from '../repository/CouponRepository';
+import CurrencyGateway from '../gateway/CurrencyGateway';
 import CurrencyTable from '../../domain/entity/CurrencyTable';
 import FreightCalculator from '../../domain/entity/FreightCalculator';
 import Order from '../../domain/entity/Order';
-import OrderRepository from '../../OrderRepository';
-import ProductRepository from '../../ProductRepository';
+import ProductRepository from '../repository/ProductRepository';
+import OrderRepository from '../repository/OrderRepository';
 
 export default class Checkout {
   constructor(
-    readonly currencyGateway: CurrencyGateway = new CurrencyGatewayHttp(),
+    readonly currencyGateway: CurrencyGateway,
     readonly productRepository: ProductRepository,
     readonly couponRepository: CouponRepository,
     readonly orderRepository: OrderRepository,

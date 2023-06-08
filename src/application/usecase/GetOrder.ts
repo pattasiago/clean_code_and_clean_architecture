@@ -1,4 +1,4 @@
-import OrderRepository from '../../OrderRepository';
+import OrderRepository from '../repository/OrderRepository';
 
 export default class GetOrder {
   constructor(readonly orderRepository: OrderRepository) {}

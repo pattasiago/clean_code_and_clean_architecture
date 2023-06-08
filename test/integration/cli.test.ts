@@ -1,19 +1,21 @@
-import CLIController from '../src/CLIController';
-import CLIHandler from '../src/CLIHandler';
-import Connection from '../src/Connection';
-import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
-import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
-import OrderRepositoryDatabase from '../src/OrderRepositoryDatabase';
-import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
-import SQLITE from '../src/SQLITEAdapter';
-import Checkout from '../src/application/usecase/Checkout';
+import Checkout from '../../src/application/usecase/Checkout';
+import CLIController from '../../src/infra/cli/CLIController';
+import CLIHandler from '../../src/infra/cli/CLIHandler';
+import Connection from '../../src/infra/database/Connection';
+import SQLITE from '../../src/infra/database/SQLITEAdapter';
+import CurrencyGatewayHttp from '../../src/infra/gateway/CurrencyGatewayHttp';
+import AxiosAdapter from '../../src/infra/http/AxiosAdapter';
+import CouponRepositoryDatabase from '../../src/infra/repository/CouponRepositoryDatabase';
+import OrderRepositoryDatabase from '../../src/infra/repository/OrderRepositoryDatabase';
+import ProductRepositoryDatabase from '../../src/infra/repository/ProductRepositoryDatabase';
 
 let checkout: Checkout;
 let connection: Connection;
 
 beforeEach(function () {
   connection = new SQLITE();
-  const currencyGateway = new CurrencyGatewayHttp();
+  const httpClient = new AxiosAdapter();
+  const currencyGateway = new CurrencyGatewayHttp(httpClient);
   const productRepository = new ProductRepositoryDatabase(connection);
   const couponRepository = new CouponRepositoryDatabase(connection);
   const orderRepository = new OrderRepositoryDatabase(connection);

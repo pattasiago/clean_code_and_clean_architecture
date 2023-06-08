@@ -1,5 +1,5 @@
 import CLIHandler from './CLIHandler';
-import Checkout from './application/usecase/Checkout';
+import Checkout from '../../application/usecase/Checkout';
 
 export default class CLIController {
   constructor(readonly handler: CLIHandler, readonly checkout: Checkout) {

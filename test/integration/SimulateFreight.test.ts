@@ -1,7 +1,7 @@
-import Connection from '../src/Connection';
-import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
-import SQLITE from '../src/SQLITEAdapter';
-import SimulateFreight from '../src/application/usecase/SimulateFreight';
+import SimulateFreight from '../../src/application/usecase/SimulateFreight';
+import Connection from '../../src/infra/database/Connection';
+import SQLITE from '../../src/infra/database/SQLITEAdapter';
+import ProductRepositoryDatabase from '../../src/infra/repository/ProductRepositoryDatabase';
 
 let simulateFreight: SimulateFreight;
 let connection: Connection;

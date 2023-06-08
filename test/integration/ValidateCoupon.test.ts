@@ -1,7 +1,7 @@
-import Connection from '../src/Connection';
-import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
-import SQLITE from '../src/SQLITEAdapter';
-import ValidateCoupon from '../src/application/usecase/ValidateCoupon';
+import ValidateCoupon from '../../src/application/usecase/ValidateCoupon';
+import Connection from '../../src/infra/database/Connection';
+import SQLITE from '../../src/infra/database/SQLITEAdapter';
+import CouponRepositoryDatabase from '../../src/infra/repository/CouponRepositoryDatabase';
 
 let validateCoupon: ValidateCoupon;
 let connection: Connection;

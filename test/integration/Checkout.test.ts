@@ -1,18 +1,19 @@
-import Checkout from '../src/application/usecase/Checkout';
+import CurrencyGateway from '../../src/application/gateway/CurrencyGateway';
+import ProductRepository from '../../src/application/repository/ProductRepository';
+import Checkout from '../../src/application/usecase/Checkout';
+import GetOrder from '../../src/application/usecase/GetOrder';
+import ListOrders from '../../src/application/usecase/ListOrders';
+import Order from '../../src/domain/entity/Order';
+import Product from '../../src/domain/entity/Product';
+import Connection from '../../src/infra/database/Connection';
+import SQLITE from '../../src/infra/database/SQLITEAdapter';
+import CurrencyGatewayHttp from '../../src/infra/gateway/CurrencyGatewayHttp';
+import AxiosAdapter from '../../src/infra/http/AxiosAdapter';
+import CouponRepositoryDatabase from '../../src/infra/repository/CouponRepositoryDatabase';
+import OrderRepositoryDatabase from '../../src/infra/repository/OrderRepositoryDatabase';
+import ProductRepositoryDatabase from '../../src/infra/repository/ProductRepositoryDatabase';
 import sinon from 'sinon';
-import CurrencyGatewayHttp from '../src/CurrencyGatewayHttp';
-import ProductRepositoryDatabase from '../src/ProductRepositoryDatabase';
-import CouponRepositoryDatabase from '../src/CouponRepositoryDatabase';
-import CurrencyGateway from '../src/CurrencyGateway';
-import ProductRepository from '../src/ProductRepository';
 import crypto from 'crypto';
-import GetOrder from '../src/application/usecase/GetOrder';
-import OrderRepositoryDatabase from '../src/OrderRepositoryDatabase';
-import Product from '../src/domain/entity/Product';
-import ListOrders from '../src/application/usecase/ListOrders';
-import Order from '../src/domain/entity/Order';
-import Connection from '../src/Connection';
-import SQLITE from '../src/SQLITEAdapter';
 
 let checkout: Checkout;
 let getOrder: GetOrder;
@@ -21,7 +22,8 @@ let connection: Connection;
 
 beforeEach(function () {
   connection = new SQLITE();
-  const currencyGateway = new CurrencyGatewayHttp();
+  const httpClient = new AxiosAdapter();
+  const currencyGateway = new CurrencyGatewayHttp(httpClient);
   const productRepository = new ProductRepositoryDatabase(connection);
   const couponRepository = new CouponRepositoryDatabase(connection);
   const orderRepository = new OrderRepositoryDatabase(connection);
